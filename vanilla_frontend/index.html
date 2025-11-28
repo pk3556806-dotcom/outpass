@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusPass - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="card login-card">
+            <div class="login-header">
+                <h1>CampusPass</h1>
+                <p style="color: var(--text-muted);">Student Out-Pass System</p>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('student')">Student</button>
+                <button class="tab-btn" onclick="switchTab('warden')">Warden</button>
+                <button class="tab-btn" onclick="switchTab('security')">Security</button>
+            </div>
+
+            <!-- Student Login Form -->
+            <form id="student-form" onsubmit="handleLogin(event, 'STUDENT')">
+                <div class="form-group">
+                    <label>USN</label>
+                    <input type="text" class="form-control" name="username" value="4CE23CS045" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" name="password" value="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login as Student</button>
+            </form>
+
+            <!-- Warden Login Form -->
+            <form id="warden-form" class="hidden" onsubmit="handleLogin(event, 'WARDEN')">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" class="form-control" name="username" value="warden" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" name="password" value="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login as Warden</button>
+            </form>
+
+            <!-- Security Login Form -->
+            <form id="security-form" class="hidden" onsubmit="handleLogin(event, 'SECURITY')">
+                <div class="form-group">
+                    <label>Guard ID</label>
+                    <input type="text" class="form-control" name="username" value="security" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" name="password" value="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login as Security</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function switchTab(role) {
+            // Update Tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Show/Hide Forms
+            document.getElementById('student-form').classList.add('hidden');
+            document.getElementById('warden-form').classList.add('hidden');
+            document.getElementById('security-form').classList.add('hidden');
+
+            document.getElementById(`${role}-form`).classList.remove('hidden');
+        }
+
+        function handleLogin(e, role) {
+            e.preventDefault();
+            const form = e.target;
+            const username = form.username.value;
+            const password = form.password.value;
+
+            if (login(role, username, password)) {
+                if (role === 'STUDENT') window.location.href = 'student_dashboard.html';
+                if (role === 'WARDEN') window.location.href = 'warden_dashboard.html';
+                if (role === 'SECURITY') window.location.href = 'security_scan.html';
+            } else {
+                alert('Invalid credentials!');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="nav-brand">CampusPass Warden</div>
+            <div class="nav-user">
+                <span class="user-name-display">Warden</span>
+                <button onclick="logout()" class="btn btn-sm btn-outline">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Pending Requests</h2>
+        <div id="pending-container" class="dashboard-grid">
+            <!-- Pending passes loaded here -->
+        </div>
+
+        <h2 style="margin-top: 3rem;">Approved/Rejected History</h2>
+        <div id="history-container" class="dashboard-grid">
+            <!-- History loaded here -->
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        checkAuth('WARDEN');
+
+        function renderDashboard() {
+            const passes = getPasses();
+            const pendingContainer = document.getElementById('pending-container');
+            const historyContainer = document.getElementById('history-container');
+            
+            pendingContainer.innerHTML = '';
+            historyContainer.innerHTML = '';
+
+            passes.forEach(pass => {
+                const card = document.createElement('div');
+                card.className = `pass-card ${pass.status.toLowerCase()}`;
+                
+                let actionsHtml = '';
+                if (pass.status === 'PENDING') {
+                    actionsHtml = `
+                        <div class="mt-4 flex">
+                            <button onclick="processPass('${pass.id}', 'APPROVED')" class="btn btn-sm btn-success" style="flex: 1;">Approve</button>
+                            <button onclick="processPass('${pass.id}', 'REJECTED')" class="btn btn-sm btn-danger" style="flex: 1;">Reject</button>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="pass-header">
+                        <span class="pass-id">${pass.id}</span>
+                        <span class="status-badge status-${pass.status.toLowerCase()}">${pass.status}</span>
+                    </div>
+                    <h3 style="margin-bottom: 0.5rem;">${pass.studentName}</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">${pass.usn}</p>
+                    
+                    <div class="pass-details">
+                        <div><strong>Reason:</strong> ${pass.reason}</div>
+                        <div><strong>Date:</strong> ${pass.date}</div>
+                        <div><strong>Time:</strong> ${pass.timeOut}</div>
+                    </div>
+                    ${actionsHtml}
+                `;
+
+                if (pass.status === 'PENDING') {
+                    pendingContainer.appendChild(card);
+                } else {
+                    historyContainer.appendChild(card);
+                }
+            });
+
+            if (pendingContainer.children.length === 0) {
+                pendingContainer.innerHTML = '<p style="color: var(--text-muted);">No pending requests.</p>';
+            }
+        }
+
+        function processPass(id, status) {
+            let reason = null;
+            if (status === 'REJECTED') {
+                reason = prompt("Enter rejection reason:", "Administrative Decision");
+                if (!reason) return; // Cancelled
+            }
+
+            if (confirm(`Are you sure you want to ${status} this pass?`)) {
+                updatePassStatus(id, status, reason);
+                renderDashboard();
+            }
+        }
+
+        renderDashboard();
+    </script>
+</body>
+</html>
