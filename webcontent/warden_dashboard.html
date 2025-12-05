@@ -64,16 +64,16 @@
 
                 card.innerHTML = `
                     <div class="pass-header">
-                        <span class="pass-id">${pass.passId}</span>
+                        <span class="pass-id">${pass.pass_id}</span>
                         <span class="status-badge status-${pass.status.toLowerCase()}">${pass.status}</span>
                     </div>
-                    <h3 style="margin-bottom: 0.5rem;">${pass.studentName}</h3>
+                    <h3 style="margin-bottom: 0.5rem;">${pass.student_name}</h3>
                     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">${pass.usn}</p>
-                    
+
                     <div class="pass-details">
                         <div><strong>Reason:</strong> ${pass.reason}</div>
                         <div><strong>Date:</strong> ${pass.date}</div>
-                        <div><strong>Time Out:</strong> ${pass.timeOut}</div>
+                        <div><strong>Time Out:</strong> ${pass.time_out}</div>
                     </div>
                     ${actionsHtml}
                 `;

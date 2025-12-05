@@ -76,7 +76,8 @@
             const response = await applyPass(
                 form.reason.value,
                 form.date.value,
-                form.timeOut.value
+                form.timeOut.value,
+                form.isEmergency.checked
             );
             
             if (response.success) {

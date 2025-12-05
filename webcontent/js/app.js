@@ -1,7 +1,10 @@
-// app.js - UPDATED FOR JAVA SERVLET BACKEND INTEGRATION
+// app.js - SUPABASE EDGE FUNCTIONS BACKEND
 
-const BASE_URL = '/campuspass/api'; 
-const API_LOGIN = `${BASE_URL}/login`;
+const SUPABASE_URL = 'https://nzswrqgmlfkzfonoxqdl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56c3dycWdtbGZremZvbm94cWRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5NDUxNDIsImV4cCI6MjA4MDUyMTE0Mn0.NLzeL8Y597zo958LgsIZ5u8kmgJJ9BrkfetlBZOYV1Y';
+
+const BASE_URL = `${SUPABASE_URL}/functions/v1`;
+const API_LOGIN = `${BASE_URL}/auth`;
 const API_PASS = `${BASE_URL}/pass`;
 const API_WARDEN = `${BASE_URL}/warden`;
 const API_GUARD = `${BASE_URL}/guard`;
@@ -9,31 +12,32 @@ const API_GUARD = `${BASE_URL}/guard`;
 // --- AUTHENTICATION & SESSION MANAGEMENT ---
 
 /**
- * Handles multi-role login via API call to LoginServlet.
- * Uses x-www-form-urlencoded format for the POST body as required by the servlet.
+ * Handles multi-role login via Supabase Edge Function.
  */
 async function login(role, username, password) {
     const errorMsgElement = document.getElementById('error-message');
     if (errorMsgElement) errorMsgElement.style.display = 'none';
 
-    // 1. Prepare body in x-www-form-urlencoded format
-    const body = new URLSearchParams({
+    const body = {
         role: role.toUpperCase(),
         username: username,
         password: password
-    });
+    };
 
     try {
         const response = await fetch(API_LOGIN, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString()
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify(body)
         });
 
         const data = await response.json();
 
         if (data.success) {
-            // 2. Store user data from the server in localStorage for session
             localStorage.setItem('user', JSON.stringify(data));
             return data.role;
         } else {
@@ -47,7 +51,7 @@ async function login(role, username, password) {
     } catch (error) {
         console.error('Login API Error:', error);
         if (errorMsgElement) {
-            errorMsgElement.textContent = 'Server connection failed. Check Tomcat status.';
+            errorMsgElement.textContent = 'Server connection failed. Please try again.';
             errorMsgElement.style.display = 'block';
         }
         return false;
@@ -59,7 +63,7 @@ async function login(role, username, password) {
  */
 function checkAuth(requiredRole) {
     const user = JSON.parse(localStorage.getItem('user'));
-    
+
     if (!user) {
         window.location.href = 'index.html';
         return null;
@@ -71,11 +75,11 @@ function checkAuth(requiredRole) {
         window.location.href = 'index.html';
         return null;
     }
-    
+
     // Update UI with user name
     const userNameElements = document.querySelectorAll('.user-name-display');
-    userNameElements.forEach(el => el.textContent = user.name || user.username || user.usn);
-    
+    userNameElements.forEach(el => el.textContent = user.name || user.identifier);
+
     return user;
 }
 
@@ -90,15 +94,20 @@ function logout() {
 // --- STUDENT FUNCTIONALITY ---
 
 /**
- * Fetches all passes for the current student. Replaces getPasses().filter(usn).
+ * Fetches all passes for the current student.
  */
 async function fetchPassesByUsn(usn) {
     try {
-        // GET request with USN query parameter
-        const response = await fetch(`${API_PASS}?usn=${usn}`);
+        const response = await fetch(`${API_PASS}?usn=${usn}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SUPABASE_ANON_KEY
+            }
+        });
         if (!response.ok) throw new Error('Failed to fetch passes.');
-        
-        return await response.json(); // Returns List<Pass>
+
+        return await response.json();
     } catch (error) {
         console.error('Fetch Passes Error:', error);
         return [];
@@ -106,29 +115,33 @@ async function fetchPassesByUsn(usn) {
 }
 
 /**
- * Submits a new pass request to PassServlet.
+ * Submits a new pass request.
  */
-async function applyPass(reason, date, time) {
+async function applyPass(reason, date, time, isEmergency = false) {
     const user = checkAuth('STUDENT');
     if (!user) return { success: false, message: 'Not logged in.' };
-    
+
     const requestBody = {
-        usn: user.usn,
+        usn: user.identifier || user.usn,
         studentName: user.name,
         reason: reason,
         date: date,
         timeOut: time,
-        isEmergency: false // Assuming non-emergency for simplicity from the provided HTML
+        isEmergency: isEmergency
     };
 
     try {
         const response = await fetch(API_PASS, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SUPABASE_ANON_KEY
+            },
             body: JSON.stringify(requestBody)
         });
-        
-        return await response.json(); // { success: true/false, message: "..." }
+
+        return await response.json();
     } catch (error) {
         console.error('Apply Pass Error:', error);
         return { success: false, message: 'Network error submitting request.' };
@@ -138,14 +151,20 @@ async function applyPass(reason, date, time) {
 // --- WARDEN FUNCTIONALITY ---
 
 /**
- * Fetches all PENDING passes for the warden. Replaces getPasses().filter(PENDING).
+ * Fetches all PENDING passes for the warden.
  */
 async function fetchPendingPasses() {
     try {
-        const response = await fetch(API_WARDEN); // GET request
+        const response = await fetch(API_WARDEN, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SUPABASE_ANON_KEY
+            }
+        });
         if (!response.ok) throw new Error('Failed to fetch pending passes.');
-        
-        return await response.json(); // Returns List<Pass> where status = PENDING
+
+        return await response.json();
     } catch (error) {
         console.error('Fetch Pending Passes Error:', error);
         return [];
@@ -153,11 +172,11 @@ async function fetchPendingPasses() {
 }
 
 /**
- * Updates the status of a pass (APPROVE/REJECT). Replaces mock updatePassStatus.
+ * Updates the status of a pass (APPROVE/REJECT).
  */
 async function updatePassStatus(id, status, rejectionReason = null) {
     const requestBody = {
-        action: status, // APPROVED or REJECTED
+        action: status,
         passId: id,
         rejectionReason: rejectionReason
     };
@@ -165,11 +184,15 @@ async function updatePassStatus(id, status, rejectionReason = null) {
     try {
         const response = await fetch(API_WARDEN, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SUPABASE_ANON_KEY
+            },
             body: JSON.stringify(requestBody)
         });
 
-        return await response.json(); // { success: true/false, message: "..." }
+        return await response.json();
 
     } catch (error) {
         console.error('Warden Action Error:', error);
@@ -180,22 +203,26 @@ async function updatePassStatus(id, status, rejectionReason = null) {
 // --- SECURITY GUARD FUNCTIONALITY ---
 
 /**
- * Records an EXIT or RETURN event for a pass. Replaces mock recordScan.
+ * Records an EXIT or RETURN event for a pass.
  */
 async function recordScan(passId, eventType) {
     const requestBody = {
         passId: passId,
-        type: eventType // EXIT or RETURN
+        type: eventType
     };
 
     try {
         const response = await fetch(API_GUARD, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SUPABASE_ANON_KEY
+            },
             body: JSON.stringify(requestBody)
         });
 
-        return await response.json(); // { success: true/false, message: "..." }
+        return await response.json();
 
     } catch (error) {
         console.error('Guard Scan Error:', error);
