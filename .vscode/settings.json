@@ -1,0 +1,8 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "libs/gson-2.10.1.jar",
+        "libs/mysql-connector-j-9.5.0.jar",
+        "libs/servlet-api.jar"
+    ]
+}

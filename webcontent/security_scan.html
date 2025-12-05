@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Guard Scan</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="nav-brand">CampusPass Guard</div>
+            <div class="nav-user">
+                <span class="user-name-display">Guard</span>
+                <button onclick="logout()" class="btn btn-sm btn-outline">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-container" style="min-height: calc(100vh - 80px);">
+        <div class="card login-card" style="max-width: 500px; padding: 2rem;">
+            <h2 style="margin-bottom: 1rem;">Pass Scanner</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Enter Pass ID (from QR code) or use a scanner.</p>
+            
+            <div id="scan-message" class="alert-message hidden"></div>
+
+            <form id="scanForm" onsubmit="event.preventDefault()">
+                <div class="form-group">
+                    <label>Pass ID</label>
+                    <input type="text" class="form-control" name="passId" id="passIdInput" placeholder="PASS1701012345678" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-warning" onclick="handleScanAction('EXIT')">Record EXIT</button>
+                    <button type="button" class="btn btn-success" onclick="handleScanAction('RETURN')">Record RETURN</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        checkAuth('SECURITY');
+
+        async function handleScanAction(eventType) {
+            const passId = document.getElementById('passIdInput').value.trim();
+            const msgDiv = document.getElementById('scan-message');
+            msgDiv.classList.add('hidden');
+
+            if (!passId) {
+                msgDiv.textContent = 'Please enter a Pass ID.';
+                msgDiv.classList.add('error');
+                msgDiv.classList.remove('success', 'hidden');
+                return;
+            }
+
+            // Call the API function
+            const response = await recordScan(passId, eventType);
+            
+            if (response.success) {
+                msgDiv.textContent = response.message || `${eventType} recorded successfully for Pass ID: ${passId}`;
+                msgDiv.classList.add('success');
+                msgDiv.classList.remove('error', 'hidden');
+                document.getElementById('passIdInput').value = ''; // Clear input
+            } else {
+                msgDiv.textContent = response.message || `Failed to record ${eventType}. Check Pass ID and status.`;
+                msgDiv.classList.add('error');
+                msgDiv.classList.remove('success', 'hidden');
+            }
+        }
+    </script>
+</body>
+</html>

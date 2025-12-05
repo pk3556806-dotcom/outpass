@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="nav-brand">CampusPass Student</div>
+            <div class="nav-user">
+                <span class="user-name-display">Student</span>
+                <button onclick="logout()" class="btn btn-sm btn-outline">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2>My Dashboard</h2>
+            <a href="student_apply.html" class="btn btn-primary btn-sm">Apply for Pass</a>
+        </div>
+
+        <div id="passes-container" class="dashboard-grid">
+            <div id="loading-message">Loading pass history...</div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Protect Route
+        const user = checkAuth('STUDENT');
+
+        async function renderPasses() {
+            const container = document.getElementById('passes-container');
+            container.innerHTML = '<div id="loading-message">Loading pass history...</div>';
+            
+            // 1. Fetch data from backend
+            const passes = await fetchPassesByUsn(user.usn);
+            
+            container.innerHTML = ''; // Clear loading message
+
+            if (passes.length === 0) {
+                container.innerHTML = '<p class="text-muted">No passes requested yet.</p>';
+                return;
+            }
+
+            // 2. Render passes
+            passes.forEach(pass => {
+                const card = document.createElement('div');
+                card.className = `card pass-card ${pass.status.toLowerCase()}`;
+                
+                let qrCodeHtml = '';
+                // Only show QR for APPROVED passes
+                if (pass.status === 'APPROVED') {
+                    // The backend now generates the passId, use that instead of the internal ID
+                    qrCodeHtml = `<div id="qr-${pass.passId}" class="mt-4" style="display: flex; justify-content: center;"></div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="pass-header">
+                        <span class="pass-id">${pass.passId}</span>
+                        <span class="status-badge status-${pass.status.toLowerCase()}">${pass.status}</span>
+                    </div>
+                    <h3 style="margin-bottom: 1rem;">${pass.reason}</h3>
+                    <div class="pass-details">
+                        <div><strong>Date:</strong> ${pass.date}</div>
+                        <div><strong>Time Out:</strong> ${pass.timeOut}</div>
+                        ${pass.exitedAt ? `<div><strong>Exited At:</strong> ${new Date(pass.exitedAt).toLocaleTimeString()}</div>` : ''}
+                        ${pass.returnedAt ? `<div><strong>Returned At:</strong> ${new Date(pass.returnedAt).toLocaleTimeString()}</div>` : ''}
+                    </div>
+                    ${qrCodeHtml}
+                    ${pass.rejectionReason ? `<div style="margin-top: 1rem; color: var(--danger); font-size: 0.9rem;">Reason: ${pass.rejectionReason}</div>` : ''}
+                `;
+                
+                container.appendChild(card);
+
+                // 3. Generate QR code asynchronously
+                if (pass.status === 'APPROVED') {
+                    setTimeout(() => {
+                        // The text encoded in the QR code is the pass_id
+                        new QRCode(document.getElementById(`qr-${pass.passId}`), {
+                            text: pass.passId,
+                            width: 128,
+                            height: 128
+                        });
+                    }, 100);
+                }
+            });
+        }
+
+        renderPasses();
+    </script>
+</body>
+</html>

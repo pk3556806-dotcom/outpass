@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry kind="src" path="java_backend_reference"/>
+    <classpathentry kind="lib" path="libs/servlet-api.jar"/>
+    <classpathentry kind="lib" path="libs/gson-2.10.1.jar"/>
+    <classpathentry kind="lib" path="libs/mysql-connector-j-9.5.0.jar"/>
+    <classpathentry kind="output" path="bin"/>
+</classpath>

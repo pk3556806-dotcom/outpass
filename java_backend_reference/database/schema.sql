@@ -1,53 +1,49 @@
--- Database: campus_pass_db
+CREATE DATABASE IF NOT EXISTS campuspass;
+USE campuspass;
 
-CREATE DATABASE IF NOT EXISTS campus_pass_db;
-USE campus_pass_db;
-
--- 1. Students Table
 CREATE TABLE students (
     usn VARCHAR(20) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    password VARCHAR(100) NOT NULL, -- In production, store hashed passwords
-    dept VARCHAR(50),
+    password VARCHAR(255) NOT NULL,
+    department VARCHAR(50),
     semester INT,
-    phone VARCHAR(15)
+    phone VARCHAR(20)
 );
 
--- 2. Wardens Table
 CREATE TABLE wardens (
     username VARCHAR(50) PRIMARY KEY,
-    password VARCHAR(100) NOT NULL,
-    name VARCHAR(100)
+    name VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL
 );
 
--- 3. Security Guards Table
-CREATE TABLE security (
-    username VARCHAR(50) PRIMARY KEY,
-    password VARCHAR(100) NOT NULL,
-    name VARCHAR(100)
+CREATE TABLE security_guards (
+    guard_id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL
 );
 
--- 4. Outpass Requests Table
-CREATE TABLE outpass_requests (
-    pass_id VARCHAR(20) PRIMARY KEY,
+CREATE TABLE passes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    pass_id VARCHAR(30) UNIQUE,
     usn VARCHAR(20),
-    reason TEXT,
+    student_name VARCHAR(100),
+    reason VARCHAR(500),
     date DATE,
-    time_out TIME,
-    status ENUM('PENDING', 'APPROVED', 'REJECTED', 'USED') DEFAULT 'PENDING',
-    rejection_reason TEXT,
-    qr_code LONGTEXT, -- Base64 string of the QR code image (optional, or generate on fly)
+    time_out VARCHAR(20),
+    status VARCHAR(20) DEFAULT 'PENDING', -- PENDING / APPROVED / REJECTED / USED
+    rejection_reason VARCHAR(500),
+    is_emergency BOOLEAN DEFAULT FALSE,
+    qr_base64 LONGTEXT,
+    used_flag BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usn) REFERENCES students(usn)
+    exited_at TIMESTAMP NULL,
+    returned_at TIMESTAMP NULL,
+    FOREIGN KEY (usn) REFERENCES students(usn) ON DELETE SET NULL
 );
 
--- Insert Mock Data
-INSERT INTO students (usn, name, password, dept, semester, phone) VALUES 
-('4CE23CS045', 'Rahul Sharma', 'password123', 'CSE', 5, '9876543210'),
-('4CE23CS099', 'Amit Verma', 'password123', 'ISE', 5, '9876543211');
+INSERT INTO students (usn, name, password, department, semester, phone)
+VALUES ('4CB24CG010', 'Durgashree', '12345', 'CSD', 1, '8590980712');
 
-INSERT INTO wardens (username, password, name) VALUES 
-('warden_admin', 'admin123', 'Dr. Patil');
+INSERT INTO wardens VALUES ('warden1', 'Chief Warden', '12345');
 
-INSERT INTO security (username, password, name) VALUES 
-('SEC001', 'secure123', 'Main Gate Guard');
+INSERT INTO security_guards VALUES ('guard01', 'Main Gate Security', '12345');

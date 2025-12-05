@@ -1,0 +1,7 @@
+{
+  "java.project.referencedLibraries": [
+    "D:/JAVA/StudentOutpassManager/libs/gson-2.10.1.jar",
+    "D:/JAVA/StudentOutpassManager/libs/servlet-api.jar",
+    "D:/JAVA/StudentOutpassManager/libs/mysql-connector-j-9.5.0.jar"
+  ]
+}

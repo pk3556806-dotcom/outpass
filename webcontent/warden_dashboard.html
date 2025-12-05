@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="nav-brand">CampusPass Warden</div>
+            <div class="nav-user">
+                <span class="user-name-display">Warden</span>
+                <button onclick="logout()" class="btn btn-sm btn-outline">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Pending Requests</h2>
+        <div id="pending-container" class="dashboard-grid">
+            <div id="loading-message">Loading pending requests...</div>
+        </div>
+
+        <h2 style="margin-top: 3rem;">Review History</h2>
+        <div id="history-container" class="dashboard-grid">
+            <p class="text-muted">Passes disappear from here once APPROVED or REJECTED. To view history, a new endpoint is required.</p>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        checkAuth('WARDEN');
+
+        async function renderDashboard() {
+            const pendingContainer = document.getElementById('pending-container');
+            const historyContainer = document.getElementById('history-container');
+            
+            pendingContainer.innerHTML = '<div id="loading-message">Loading pending requests...</div>';
+            historyContainer.innerHTML = ''; // Clear old content
+
+            // 1. Fetch data from backend
+            const passes = await fetchPendingPasses(); // This calls GET /api/warden
+            
+            pendingContainer.innerHTML = ''; // Clear loading message
+
+            if (passes.length === 0) {
+                pendingContainer.innerHTML = '<p style="color: var(--success);">No pending requests.</p>';
+                return;
+            }
+
+            // 2. Render passes
+            passes.forEach(pass => {
+                const card = document.createElement('div');
+                card.className = 'card pass-card pending';
+                
+                const actionsHtml = `
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <button onclick="processPass(${pass.id}, 'APPROVED')" class="btn btn-sm btn-success">Approve</button>
+                        <button onclick="processPass(${pass.id}, 'REJECTED')" class="btn btn-sm btn-danger">Reject</button>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    <div class="pass-header">
+                        <span class="pass-id">${pass.passId}</span>
+                        <span class="status-badge status-${pass.status.toLowerCase()}">${pass.status}</span>
+                    </div>
+                    <h3 style="margin-bottom: 0.5rem;">${pass.studentName}</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">${pass.usn}</p>
+                    
+                    <div class="pass-details">
+                        <div><strong>Reason:</strong> ${pass.reason}</div>
+                        <div><strong>Date:</strong> ${pass.date}</div>
+                        <div><strong>Time Out:</strong> ${pass.timeOut}</div>
+                    </div>
+                    ${actionsHtml}
+                `;
+
+                pendingContainer.appendChild(card);
+            });
+        }
+
+        async function processPass(id, status) {
+            let reason = null;
+            if (status === 'REJECTED') {
+                reason = prompt("Enter rejection reason:", "Administrative Decision");
+                if (!reason) return; // Cancelled
+            }
+            
+            if (confirm(`Are you sure you want to ${status} this pass?`)) {
+                // Call the API and wait for the response
+                const response = await updatePassStatus(id, status, reason); 
+
+                if (response.success) {
+                    alert(`Pass ${id} ${status} successfully.`);
+                } else {
+                    alert(`Action failed: ${response.message}`);
+                }
+                
+                // Always re-render the dashboard to show the pass has been removed
+                renderDashboard();
+            }
+        }
+
+        renderDashboard();
+    </script>
+</body>
+</html>

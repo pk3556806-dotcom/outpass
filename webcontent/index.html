@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusPass - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="card login-card">
+            <div class="login-header">
+                <h1>CampusPass</h1>
+                <p style="color: var(--text-muted);">Student Out-Pass System</p>
+            </div>
+            
+            <div id="error-message" class="error-message" style="display: none; margin-bottom: 1rem;"></div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('student')">Student</button>
+                <button class="tab-btn" onclick="switchTab('warden')">Warden</button>
+                <button class="tab-btn" onclick="switchTab('security')">Security</button>
+            </div>
+
+            <form id="student-form" onsubmit="handleLogin(event, 'STUDENT')">
+                <div class="form-group">
+                    <label>USN</label>
+                    <input type="text" class="form-control" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login as Student</button>
+            </form>
+
+            <form id="warden-form" onsubmit="handleLogin(event, 'WARDEN')" class="hidden">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" class="form-control" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login as Warden</button>
+            </form>
+            
+            <form id="security-form" onsubmit="handleLogin(event, 'SECURITY')" class="hidden">
+                <div class="form-group">
+                    <label>Guard ID</label>
+                    <input type="text" class="form-control" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login as Security</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function switchTab(role) {
+            // Update Tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tabs button[onclick*="'${role}'"]`).classList.add('active');
+
+            // Show/Hide Forms
+            document.getElementById('student-form').classList.add('hidden');
+            document.getElementById('warden-form').classList.add('hidden');
+            document.getElementById('security-form').classList.add('hidden');
+
+            document.getElementById(`${role.toLowerCase()}-form`).classList.remove('hidden');
+            
+            // Hide error message on tab switch
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        async function handleLogin(e, role) {
+            e.preventDefault();
+            const form = e.target;
+            const username = form.username.value;
+            const password = form.password.value;
+
+            // Wait for the asynchronous login function to complete
+            const loggedInRole = await login(role, username, password);
+
+            if (loggedInRole) {
+                if (loggedInRole === 'STUDENT') window.location.href = 'student_dashboard.html';
+                if (loggedInRole === 'WARDEN') window.location.href = 'warden_dashboard.html';
+                // Routing to the new guard scan page
+                if (loggedInRole === 'SECURITY') window.location.href = 'security_scan.html'; 
+            }
+            // Error handling is done inside the login function now
+        }
+    </script>
+</body>
+</html>
